@@ -5,9 +5,8 @@ import QtQuick 2.1
 import QtQuick.Controls 1.1
 
 /**
- * This is a workaround for lacking API in the QtQuick Controls MenuBar.
- * It replicates some of the functionality included in QtQuick Controls'
- * ApplicationWindow class to make the menu bar actually work.
+ * 这是QtQuick控件菜单栏中缺少API的一种解决方法。
+ * 它复制了QtQuick Controls的ApplicationWindow类中包含的某些功能，以使菜单栏真正起作用。
  */
 Rectangle
 {

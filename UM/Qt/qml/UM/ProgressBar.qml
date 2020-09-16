@@ -7,7 +7,7 @@ import QtQuick.Controls 2.3 as Controls
 import UM 1.3 as UM
 
 //
-// Styled progress bar, with colours from the theme and rounded corners.
+// 样式化的进度条，具有主题和圆角的颜色。
 //
 Controls.ProgressBar
 {

@@ -8,9 +8,9 @@ from UM.Qt.ListModel import ListModel
 
 
 class StageModel(ListModel):
-    """The StageModel is a representation of all stages in QML.
+    """StageModel表示QML中所有 stages.
 
-    Use it to populate a stage based menu (like top bar).
+    使用它来填充基于 stage 的菜单（如顶部栏）。
     """
 
     IdRole = Qt.UserRole + 1

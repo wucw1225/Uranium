@@ -6,12 +6,9 @@ from typing import Any, Callable, Dict, List
 
 
 class ListModel(QAbstractListModel):
-    """Convenience base class for models of a list of items.
+    """models of a list of items的便捷基类.
 
-    This class represents a list of dictionary objects that
-    can be exposed to QML. It is intended primarily as a read-only
-    convenience class but supports removing elements so can also be
-    used for limited writing.
+    此类表示可以暴露给QML的字典对象的列表。 它主要用作只读便利类，但支持删除元素，因此也可以用于有限的编写。
     """
 
     def __init__(self, parent = None) -> None:
@@ -23,30 +20,27 @@ class ListModel(QAbstractListModel):
 
     @pyqtProperty(int, notify = itemsChanged)
     def count(self) -> int:
-        return len(self._items)
+        return len(self._items) #返回元素个数
 
     @pyqtSlot(result = int)
     def rowCount(self, parent = None) -> int:
-        """This function is necessary because it is abstract in QAbstractListModel.
+        """该函数是必需的，因为它在QAbstractListModel中是抽象的。
 
-        Under the hood, Qt will call this function when it needs to know how
-        many items are in the model.
-        This pyqtSlot will not be linked to the itemsChanged signal, so please
-        use the normal count() function instead.
+        在后台，Qt将在需要知道模型中有多少项时调用此函数。
+        该pyqtSlot不会链接到itemsChanged信号，因此请改用常规count（）函数。
         """
 
         return self.count
 
     def addRoleName(self, role: int, name: str):
-        # Qt roleNames expects a QByteArray. PyQt 5 does not convert str to
-        # bytearray implicitly so force the conversion manually.
+        # _role_names需要一个QByteArray。 PyQt 5不会将str隐式转换为字节数组，因此请手动强制转换。
         self._role_names[role] = name.encode("utf-8")
 
     def roleNames(self):
         return self._role_names
 
     def data(self, index, role):
-        """Reimplemented from QAbstractListModel"""
+        """从QAbstractListModel重新实现"""
 
         if not index.isValid():
             return QVariant()
@@ -68,15 +62,14 @@ class ListModel(QAbstractListModel):
         return self._items
 
     def setItems(self, items: List[Dict[str, Any]]) -> None:
-        """Replace all items at once.
-        :param items: The new list of items.
+        """一次更换所有 items
+        :param items: 新的items列表.
         """
 
-        # We do not use model reset because of the following:
-        #   - it is very slow
-        #   - it can cause crashes on Mac OS X for some reason when endResetModel() is called (CURA-6015)
-        # So in this case, we use insertRows(), removeRows() and dataChanged signals to do
-        # smarter model update.
+        # 由于以下原因，我们不使用模型重置：
+        #   - 它十分慢
+        #   - 调用endResetModel（）时，由于某种原因，它可能会导致Mac OS X崩溃（CURA-6015）
+        # 因此，在这种情况下，我们使用insertRows（），removeRows（）和dataChanged信号进行更智能的模型更新。
 
         old_row_count = len(self._items)
         new_row_count = len(items)
@@ -85,14 +78,10 @@ class ListModel(QAbstractListModel):
         need_to_add = old_row_count < new_row_count
         need_to_remove = old_row_count > new_row_count
 
-        # In the case of insertion and deletion, we need to call beginInsertRows()/beginRemoveRows() and
-        # endInsertRows()/endRemoveRows() before we modify the items.
-        # In the case of modification on the existing items, we only need to modify the items and then emit
-        # dataChanged().
+        # 在插入和删除的情况下，在修改items之前，我们需要调用beginInsertRows（）/ beginRemoveRows（）和endInsertRows（）/ endRemoveRows（）。
+        # 在对现有items进行修改的情况下，我们只需要修改items，然后发出dataChanged（）。
         #
-        # Here it is simplified to replace the complete items list instead of adding/removing/modifying them one by one,
-        # and it needs to make sure that the necessary signals (insert/remove/modified) are emitted before and after
-        # the item replacement.
+        # 在这里，简化了替换完整items列表的过程，而不是一一添加/删除/修改它们，并且需要确保在items替换之前和之后发出必要的信号（插入/删除/修改）。
 
         if need_to_add:
             self.beginInsertRows(QModelIndex(), old_row_count, new_row_count - 1)
@@ -106,11 +95,11 @@ class ListModel(QAbstractListModel):
         elif need_to_remove:
             self.endRemoveRows()
 
-        # Notify that the existing items have been changed.
+        # 通知现有items已更改。
         if changed_row_count >= 0:
             self.dataChanged.emit(self.index(0, 0), self.index(changed_row_count - 1, 0))
 
-        # Notify with the custom signal itemsChanged to keep it backwards compatible in case something relies on it.
+        # 使用自定义信号itemsChanged进行通知，以使其向后兼容，以防某些情况下依赖它。
         self.itemsChanged.emit()
 
     @pyqtSlot(dict)
@@ -164,7 +153,7 @@ class ListModel(QAbstractListModel):
     def sort(self, fun: Callable[[Any], float]) -> None:
         """Sort the list.
 
-        :param fun: The callable to use for determining the sort key.
+        :param fun: 用于确定排序键的可调用对象。
         """
 
         self.beginResetModel()

@@ -10,7 +10,7 @@ from UM.Platform import Platform
 
 
 class LockFile:
-    """Manage a lock file for reading / writing in a directory.
+    """管理用于在目录中读取/写入的锁定文件。
 
     example usage::
 

@@ -11,160 +11,131 @@ if TYPE_CHECKING:
     from UM.Application import Application
 
 
-class i18nCatalog: # [CodeStyle: Ultimaker code style requires classes to start with a upper case. But i18n is lower case by convention.] pylint: disable=invalid-name
-    """Wraps a gettext translation catalog for simplified use.
+class i18nCatalog: # [CodeStyle：Ultimaker代码样式要求类以大写字母开头。 但是按照惯例，i18n是小写字母。] pylint: disable=invalid-name
+    """包装gettext转换目录以简化使用。
 
-    This class wraps a gettext translation catalog to simplify its use.
-    It will load the translation catalog from Resources' i18nLocation
-    and allows specifying which language to load.
+    此类包装gettext转换目录以简化其使用。 它将从Resource/i18n加载翻译目录，并允许指定要加载的语言。
 
-    To use this class, create an instance of it with the name of the catalog
-    to load. Then call `i18n` or `i18nc` on the instance to perform a look
-    up in the catalog.
+    要使用此类，请使用要加载的目录名称创建其实例。 然后在实例上调用`i18n`或`i18nc`在目录中执行查找。
 
-    Standard Contexts and Translation Tags
+    标准上下文和翻译标签
     --------------------------------------
 
-    The translation system relies upon a set of standard contexts and HTML-like
-    translation tags. Please see the [translation guide](docs/translations.md)
-    for details.
+    翻译系统依赖于一组标准上下文和类似HTML的翻译标签。 有关详细信息，请参见[翻译指南]（docs / translations.md）。
 
     """
 
     def __init__(self, name: str = None, language: str = "default") -> None: #pylint: disable=bad-whitespace
-        """Creates a new catalogue.
+        """创建一个新目录。
 
-        :param name: The name of the catalog to load.
-        :param language: The language to load. Valid values are language codes or
-        "default". When "default" is specified, the language to load will be
-        determined based on the system"s language settings.
+        :param name: 要加载的目录的名称。
+        :param language: 要加载的语言。 有效值为语言代码或“默认”。 当指定“默认”时，将根据系统的语言设置确定要加载的语言。
 
-        :note When `language` is `default`, the language to load can be
-        overridden using the "LANGUAGE" environment variable.
+        :注意当“语言”为“默认”时，可以使用“ LANGUAGE”环境变量覆盖要加载的语言。
         """
 
         self.__name = name
         self.__language = language
         self.__translation = None   # type: Optional[gettext.NullTranslations]
         self.__require_update = True
-        self._update() #Load the actual translation document now that the language is set.
+        self._update() #现在已经设置了语言，请加载实际的翻译文档。
 
     def hasTranslationLoaded(self) -> bool:
-        """Whether the translated texts are loaded into this catalogue.
+        """是否将翻译的文本加载到此目录中。
 
-        If there are translated texts, it is safe to request the text with the
-        ``gettext`` method and so on.
+        如果有翻译后的文本，可以安全地使用“ gettext”方法等请求文本。
 
-        :return: ``True`` if texts are loaded into this catalogue, or ``False``
-        if they aren't.
+        :return: ``True`` 如果文本已加载到此目录中, or ``False``如果不是。
         """
 
         return self.__translation is not None
 
     def i18n(self, text: str, *args: Any) -> str:
-        """Mark a string as translateable.
+        """将字符串标记为可翻译。
 
-        :param text: The string to mark as translatable
-        :param args: Formatting arguments. These will replace formatting elements
-                     in the translated string. See python str.format().
-        :return: The translated text or the untranslated text if no translation
-        was found.
+        :param text: 标记为可翻译的字符串
+        :param args: 格式化参数。 这些将替换转换后的字符串中的格式设置元素。 参见python str.format（）。
+        :return: 翻译的文本或未翻译的文本（如果未找到翻译）。
         """
 
 
         if self.__require_update:
             self._update()
 
-        translated = text  # Default to hard-coded text if no translation catalogue is loaded.
+        translated = text  # 如果未加载翻译目录，则默认为硬编码文本。
         if self.hasTranslationLoaded():
             translated = cast(gettext.NullTranslations, self.__translation).gettext(text)
 
         if args:
-            translated = translated.format(*args)  # Positional arguments are replaced in the (translated) text.
-        return self._replaceTags(translated)  # Also replace the global keys.
+            translated = translated.format(*args)  # 位置参数将在（翻译的）文本中替换。
+        return self._replaceTags(translated)  # 同时替换 global keys.
 
     def i18nc(self, context: str, text: str, *args: Any) -> str:
-        """Mark a string as translatable and provide a context for translators.
+        """将字符串标记为可翻译，并为翻译人员提供上下文。
 
-        :param context: The context of the string, i.e. something that explains
-        the use of the text.
-        :param text: The text to mark translatable.
-        :param args: Formatting arguments. These will replace formatting elements
-        in the translated string. See python ``str.format()``.
-        :return: The translated text or the untranslated text if it was not found
-        in this catalog.
+        :param context: 字符串的上下文，即解释文本用法的内容。
+        :param text: 标记为可翻译的文本。
+        :param args: 格式化参数。 这些将替换转换后的字符串中的格式设置元素。 参见python的str.format（）。
+        :return: 翻译的文本或未翻译的文本（如果在此目录中找不到）。
         """
 
         if self.__require_update:
             self._update()
 
-        translated = text  # Default to hard-coded text if no translation catalogue is loaded.
+        translated = text  # 如果未加载翻译目录，则默认为硬编码文本。
         if self.hasTranslationLoaded():
-            message_with_context = "{0}\x04{1}".format(context, text)  # \x04 is "end of transmission" byte, indicating to gettext that they are two different texts.
+            message_with_context = "{0}\x04{1}".format(context, text)  # \x04 是“传输结束”字节，指示gettext它们是两个不同的文本。
             message = cast(gettext.NullTranslations, self.__translation).gettext(message_with_context)
             if message != message_with_context:
                 translated = message
 
         if args:
-            translated = translated.format(*args)  # Positional arguments are replaced in the (translated) text.
-        return self._replaceTags(translated)  # Also replace the global keys.
+            translated = translated.format(*args)  # 位置参数将在（翻译的）文本中替换。
+        return self._replaceTags(translated)  # 同时替换 global keys.
 
     def i18np(self, single: str, multiple: str, counter: int, *args: Any) -> str:
-        """Mark a string as translatable with plural forms.
+        """将字符串标记为可复数形式的翻译。
 
-        :param single: The singular form of the string.
-        :param multiple: The plural form of the string.
-        :param counter: The value that determines whether the singular or plural
-        form should be used.
-        :param args: Formatting arguments. These will replace formatting elements
-        in the translated string. See python ``str.format()``.
-        :return: The translated string, or the untranslated text if no
-        translation could be found. Note that the fallback simply checks if
-        counter is greater than one and if so, returns the plural form.
+        :param single: 字符串的单数形式。
+        :param multiple: 字符串的复数形式。
+        :param counter: 该值确定应使用单数形式还是复数形式。
+        :param args: 格式化参数。 这些将替换转换后的字符串中的格式设置元素。 参见python的str.format（）。
+        :return: 翻译的字符串，如果找不到翻译，则为未翻译的文本。 请注意，后备仅检查counter是否大于一，如果大于，则返回复数形式。
 
-        :note For languages other than English, more than one plural form might
-        exist. The counter is at all times used to determine what form to use,
-        with the language files specifying what plural forms are available.
-        Additionally, counter is passed as first argument to format the string.
+        :注意对于英语以外的其他语言，可能存在一种以上的复数形式。
+        counter始终用于确定使用哪种格式，语言文件指定可用的复数形式。此外，将计数器作为第一个参数传递以格式化字符串。
         """
 
         if self.__require_update:
             self._update()
 
-        translated = multiple if counter != 1 else single  # Default to hard-coded texts if no translation catalogue is loaded.
+        translated = multiple if counter != 1 else single  # 如果未加载翻译目录，则默认为硬编码文本。
         if self.hasTranslationLoaded():
             translated = cast(gettext.NullTranslations, self.__translation).ngettext(single, multiple, counter)
 
-        translated = translated.format(counter, args)  # Positional arguments are replaced in the (translated) text, but this time the counter is treated as the first argument.
-        return self._replaceTags(translated)  # Also replace the global keys.
+        translated = translated.format(counter, args)  # 在（翻译的）文本中替换了位置参数，但是这次将counter视为第一个参数。
+        return self._replaceTags(translated)  # 同时替换 global keys.
 
     def i18ncp(self, context: str, single: str, multiple: str, counter: int, *args: Any) -> str:
-        """Mark a string as translatable with plural forms and a context for
-        translators.
+        """将字符串标记为可翻译的形式，包括复数形式和翻译上下文。
 
-        :param context: The context of this string.
-        :param single: The singular form of the string.
-        :param multiple: The plural form of the string.
-        :param counter: The value that determines whether the singular or plural
-        form should be used.
-        :param args: Formatting arguments. These will replace formatting elements
-        in the translated string. See python ``str.format()``.
-        :return: The translated string, or the untranslated text if no
-        translation could be found. Note that the fallback simply checks if
-        counter is greater than one and if so returns the plural form.
+        :param context: 此字符串的上下文。
+        :param single: 字符串的单数形式。
+        :param multiple: 字符串的复数形式
+        :param counter: 该值确定应使用单数形式还是复数形式。
+        :param args: 格式化参数。 这些将替换转换后的字符串中的格式设置元素。 参见python的str.format（）。
+        :return: 已翻译的字符串，如果没有则为未翻译的文本。请注意，后备仅检查counter是否大于一，如果大于，则返回复数形式。
 
-        :note For languages other than English, more than one plural form might
-        exist. The counter is at all times used to determine what form to use,
-        with the language files specifying what plural forms are available.
-        Additionally, counter is passed as first argument to format the string.
+        :注意对于英语以外的其他语言，可能存在一种以上的复数形式。
+        counter始终用于确定使用哪种格式，语言文件指定可用的复数形式。此外，将计数器作为第一个参数传递以格式化字符串。
         """
 
         if self.__require_update:
             self._update()
 
-        translated = multiple if counter != 1 else single  # Default to hard-coded texts if no translation catalogue is loaded.
+        translated = multiple if counter != 1 else single  # 如果未加载翻译目录，则默认为硬编码文本。
         if self.hasTranslationLoaded():
-            message_with_context = "{0}\x04{1}".format(context, single)  # \x04 is "end of transmission" byte, indicating to gettext that they are two different texts.
+            message_with_context = "{0}\x04{1}".format(context, single)  # \x04 是“传输结束”字节，指示gettext它们是两个不同的文本。
             message = cast(gettext.NullTranslations, self.__translation).ngettext(message_with_context, multiple, counter)
 
             if message != message_with_context:
@@ -174,14 +145,12 @@ class i18nCatalog: # [CodeStyle: Ultimaker code style requires classes to start 
         return self._replaceTags(translated)
 
     def _replaceTags(self, string: str) -> str:
-        """Replace formatting tags in the string with globally-defined replacement
-        values.
+        """用全局定义的替换值替换字符串中的格式标记。
 
-        Which tags are replaced can be defined using the ``setTagReplacements``
-        method.
+        可以使用setTagReplacements方法定义替换哪些标签。
 
-        :param string: The text to replace tags in.
-        :return: The text with its tags replaced.
+        :param string: 替换标签的文本。
+        :return: 已替换标签的文本
         """
 
         output = string
@@ -201,7 +170,7 @@ class i18nCatalog: # [CodeStyle: Ultimaker code style requires classes to start 
         return output
 
     def _update(self) -> None:
-        """Fill the catalogue by loading the translated texts from file (again)."""
+        """通过(再次)从文件中加载翻译后的文本来填充目录。"""
 
         if not self.__application:
             self.__require_update = True
@@ -212,7 +181,7 @@ class i18nCatalog: # [CodeStyle: Ultimaker code style requires classes to start 
         if self.__language == "default":
             self.__language = self.__application.getApplicationLanguage()
 
-        # Ask gettext for all the translations in the .mo files.
+        # 询问gettext以获取.mo文件中的所有翻译。
         for path in Resources.getAllPathsForType(Resources.i18n):
             if gettext.find(cast(str, self.__name), path, languages = [self.__language]):
                 try:
@@ -224,26 +193,20 @@ class i18nCatalog: # [CodeStyle: Ultimaker code style requires classes to start 
 
     @classmethod
     def setTagReplacements(cls, replacements: Dict[str, Optional[str]]) -> None:
-        """Change the global tags that are replaced in every internationalised
-        string.
+        """更改在每个国际化字符串中替换的全局标签。
 
-        If a text contains something of the form ``<key>`` or ``</key>``, then
-        the word ``key`` will get replaced by whatever is in this dictionary at
-        the specified key.
+        如果文本包含某种形式的<key>或</key>，则“ key”一词将替换为该词典中指定键的内容。
 
-        :param replacements: A dictionary of strings to strings, indicating which
-        words between tags should get replaced.
+        :param replacements: 字符串到字符串的字典，指示应替换标签之间的哪些单词。
         """
 
         cls.__tag_replacements = replacements
 
     @classmethod
     def setApplication(cls, application: "Application") -> None:
-        """Set the ``Application`` instance to request the language and application
-        name from.
+        """设置``Application``实例以从中请求语言和应用程序名称。
 
-        :param application: The ``Application`` instance of the application that
-        is running.
+        :param application: 正在运行的应用程序的``应用程序''实例。
         """
 
         cls.__application = application
@@ -258,7 +221,7 @@ class i18nCatalog: # [CodeStyle: Ultimaker code style requires classes to start 
         cls.__language = language
         cls.__require_update = True
 
-    # Default replacements discards all tags
+    # 默认 replacements 将丢弃所有标签
     __tag_replacements = {
         "filename": None,
         "message": None

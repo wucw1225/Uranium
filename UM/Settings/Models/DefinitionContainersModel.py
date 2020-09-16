@@ -11,8 +11,8 @@ from typing import Dict
 
 
 class DefinitionContainersModel(ListModel):
-    """Model that holds definition containers. By setting the filter property the definitions held by this model can be
-    changed.
+    """保存定义容器的模型。
+    通过设置过滤器属性，可以更改此模型保留的定义。
     """
 
     NameRole = Qt.UserRole + 1          # Human readable name (string)
@@ -25,36 +25,34 @@ class DefinitionContainersModel(ListModel):
         self.addRoleName(self.IdRole, "id")
         self.addRoleName(self.SectionRole, "section")
 
-        # Listen to changes
+        # 监听changes
         ContainerRegistry.getInstance().containerAdded.connect(self._onContainerChanged)
         ContainerRegistry.getInstance().containerRemoved.connect(self._onContainerChanged)
 
         self._section_property = ""
 
-        #Preference for which sections should be shown on top. Weights for each section.
-        #Sections with the lowest value are shown on top. Sections not on this
-        #list will get a value of 0.
+        #首选项应显示在顶部。 每个部分的权重。最小值的部分显示在顶部。 不在此列表中的节的值为0。
         self._preferred_sections = {} #type: Dict[str, int]
 
         self._filter_dict = {}
         self._update()
 
     def _onContainerChanged(self, container):
-        """Handler for container change events from registry"""
+        """注册表(registry)中container change事件的处理程序"""
 
-        # We only need to update when the changed container is a DefinitionContainer.
-        if isinstance(container, DefinitionContainer):
+        # 当更改的容器是DefinitionContainer时，我们仅需要更新。
+        if isinstance(container, DefinitionContainer): # isinstance()函数判断一个对象是否是已知的类型
             self._update()
 
     def _update(self) -> None:
-        """Private convenience function to reset & repopulate the model."""
+        """私人便利函数可重置 & 重新填充模型。"""
 
         items = []
         definition_containers = ContainerRegistry.getInstance().findDefinitionContainersMetadata(**self._filter_dict)
         definition_containers.sort(key = self._sortKey)
 
         for metadata in definition_containers:
-            metadata = dict(metadata) # For fully loaded definitions, the metadata is an OrderedDict which does not pass to QML correctly
+            metadata = dict(metadata) # 对于完全加载的定义，元数据是一个OrderedDict，无法正确传递给QML
 
             items.append({
                 "name": metadata["name"],
@@ -63,7 +61,7 @@ class DefinitionContainersModel(ListModel):
                 "section": metadata.get(self._section_property, ""),
             })
         self.setItems(items)
-
+    # sectionProperty属性
     def setSectionProperty(self, property_name):
         if self._section_property != property_name:
             self._section_property = property_name
@@ -71,10 +69,12 @@ class DefinitionContainersModel(ListModel):
             self._update()
 
     sectionPropertyChanged = pyqtSignal()
+
     @pyqtProperty(str, fset = setSectionProperty, notify = sectionPropertyChanged)
     def sectionProperty(self):
         return self._section_property
 
+    # preferredSections属性
     def setPreferredSections(self, weights: Dict[str, int]):
         if self._preferred_sections != weights:
             self._preferred_sections = weights
@@ -87,9 +87,10 @@ class DefinitionContainersModel(ListModel):
     def preferredSections(self):
         return self._preferred_sections
 
+    # filter属性
     def setFilter(self, filter_dict):
-        """Set the filter of this model based on a string.
-        :param filter_dict: Dictionary to do the filtering by.
+        """根据字符串设置此模型的过滤器。
+        :param filter_dict: 用字典做过滤依据。
         """
 
         self._filter_dict = filter_dict

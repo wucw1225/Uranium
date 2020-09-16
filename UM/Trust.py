@@ -233,11 +233,11 @@ class TrustBasics:
 
 
 class Trust:
-    """Trust for use in the main-application code, as opposed to the (keygen/signing) scripts.
+    """与（keygen / signing）脚本相反，Trust可在主应用程序代码中使用。
 
-    Can be seen as an elaborate wrapper around a public-key.
-    Currently used as a singleton, as we currently have only one single 'master' public key for the entire app.
-    See the 'createkeypair.py', 'signfile.py' and 'signfolder.py' scripts in the 'scripts' folder.
+    可以看作是围绕公钥的精心包装。
+    当前用作单例，因为我们目前对于整个应用程序只有一个“主”公共密钥。
+    请参阅“scripts”文件夹中的“ createkeypair.py”，“ signfile.py”和“ signfolder.py”脚本。
     """
 
     __instance = None

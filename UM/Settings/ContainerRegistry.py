@@ -34,12 +34,11 @@ if TYPE_CHECKING:
 
 @signalemitter
 class ContainerRegistry(ContainerRegistryInterface):
-    """Central class to manage all setting providers.
+    """中央类来管理所有 setting providers.
 
-    This class aggregates all data from all container providers. If only the
-    metadata is used, it requests the metadata lazily from the providers. If
-    more than that is needed, the entire container is requested from the
-    appropriate providers.
+    此类汇总来自所有 container providers 的所有数据。
+    如果仅使用元数据，它将延迟地从 providers 那里请求元数据。
+    如果需要的更多，则从适当的 providers 处请求整个容器。
     """
 
     def __init__(self, application: "QtApplication") -> None:
@@ -61,7 +60,7 @@ class ContainerRegistry(ContainerRegistryInterface):
         self._containers = {}  # type: Dict[str, ContainerInterface]
         self._wrong_container_ids = set() # type: Set[str]  # Set of already known wrong containers that must be skipped
         self.source_provider = {}  # type: Dict[str, Optional[ContainerProvider]]  # Where each container comes from.
-        # Ensure that the empty container is added to the ID cache.
+        # 确保将空容器添加到ID缓存中。
         self.metadata["empty"] = self._emptyInstanceContainer.getMetaData()
         self._containers["empty"] = self._emptyInstanceContainer
         self.source_provider["empty"] = None
@@ -115,13 +114,10 @@ class ContainerRegistry(ContainerRegistryInterface):
         return cast(List[DefinitionContainerInterface], self.findContainers(container_type = DefinitionContainer, **kwargs))
 
     def findDefinitionContainersMetadata(self, **kwargs: Any) -> List[Dict[str, Any]]:
-        """Get the metadata of all definition containers matching certain criteria.
+        """获取符合特定条件的所有定义容器的元数据。
 
-        :param kwargs: A dictionary of keyword arguments containing keys and
-        values that need to match the metadata. An asterisk in the values can be
-        used to denote a wildcard.
-        :return: A list of metadata dictionaries matching the search criteria, or
-        an empty list if nothing was found.
+        :param kwargs: 关键字参数字典，其中包含需要与元数据匹配的键和值。 值中的星号可用于表示通配符。
+        :return: 符合搜索条件的元数据字典列表，如果未找到则为空列表。
         """
 
         return self.findContainersMetadata(container_type = DefinitionContainer, **kwargs)
@@ -213,20 +209,16 @@ class ContainerRegistry(ContainerRegistryInterface):
         return result
 
     def findContainersMetadata(self, *, ignore_case: bool = False, **kwargs: Any) -> List[Dict[str, Any]]:
-        """Find the metadata of all container objects matching certain criteria.
+        """查找符合特定条件的所有容器对象的元数据。
 
-        :param container_type: If provided, return only objects that are
-        instances or subclasses of ``container_type``.
-        :param kwargs: A dictionary of keyword arguments containing keys and
-        values that need to match the metadata. An asterisk can be used to
-        denote a wildcard.
-        :return: A list of metadata dictionaries matching the search criteria, or
-        an empty list if nothing was found.
+        :param container_type: 如果提供，则仅返回作为“ container_type”的实例或子类的对象。
+        :param kwargs: 关键字参数字典，其中包含需要与元数据匹配的键和值。 星号可用于表示通配符。
+        :return: 符合搜索条件的元数据字典列表，如果未找到则为空列表。
         """
 
         candidates = None
         if "id" in kwargs and kwargs["id"] is not None and "*" not in kwargs["id"] and not ignore_case:
-            if kwargs["id"] not in self.metadata:  # If we're looking for an unknown ID, try to lazy-load that one.
+            if kwargs["id"] not in self.metadata:  # 如果我们正在寻找未知的ID，请尝试延迟加载该ID。
                 if kwargs["id"] not in self.source_provider:
                     for candidate in self._providers:
                         if kwargs["id"] in candidate.getAllIds():

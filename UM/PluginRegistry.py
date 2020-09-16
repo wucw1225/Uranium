@@ -34,13 +34,12 @@ plugin_path_ignore_list = ["__pycache__", "tests", ".git"]
 
 
 class PluginRegistry(QObject):
-    """A central object to dynamically load modules as plugins.
+    """动态加载模块作为插件的中心对象。
 
-    The PluginRegistry class can load modules dynamically and use
-    them as plugins. Each plugin module is expected to be a directory with
-    and `__init__` file defining a `getMetaData` and a `register` function.
+    PluginRegistry类可以动态加载模块并将其用作插件。 每个插件模块应该是一个目录，
+    其中带有__init__`文件，该文件定义了一个getMetaData和一个register函数。
 
-    For more details, see the [plugins] file.
+    有关更多详细信息，请参见[plugins]文件。
 
     [plugins]: docs/plugins.md
     """
@@ -59,20 +58,19 @@ class PluginRegistry(QObject):
 
         self._plugins_installed = []  # type: List[str]
 
-        # NOTE: The disabled_plugins and plugins_to_remove is explicitly set to None.
-        # When actually loading the preferences, it's set to a list. This way we can see the
-        # difference between no list and an empty one.
+        # 注：disabled_plugins和plugins_to_remove明确设置为“无”。
+        # 实际加载首选项时，它会设置为一个列表。 这样，我们可以看到无列表和空列表之间的区别。
         self._disabled_plugins = []  # type: List[str]
         self._outdated_plugins = []  # type: List[str]
         self._plugins_to_install = dict()  # type: Dict[str, Dict[str, str]]
         self._plugins_to_remove = []  # type: List[str]
 
         self._plugins = {}            # type: Dict[str, types.ModuleType]
-        self._found_plugins = {}      # type: Dict[str, types.ModuleType]  # Cache to speed up _findPlugin
+        self._found_plugins = {}      # type: Dict[str, types.ModuleType]  # 缓存以加快_findPlugin
         self._plugin_objects = {}     # type: Dict[str, PluginObject]
 
         self._plugin_locations = []  # type: List[str]
-        self._plugin_folder_cache = {}  # type: Dict[str, List[Tuple[str, str]]]  # Cache to speed up _locatePlugin
+        self._plugin_folder_cache = {}  # type: Dict[str, List[Tuple[str, str]]]  # 缓存以加快_locatePlugin
 
         self._bundled_plugin_cache = {}  # type: Dict[str, bool]
 
@@ -87,8 +85,8 @@ class PluginRegistry(QObject):
         self._check_if_trusted = check_if_trusted
         if self._check_if_trusted:
             self._trust_checker = Trust.getInstance()
-            # 'Trust.getInstance()' will raise an exception if anything goes wrong (e.g.: 'unable to read public key').
-            # Any such exception is explicitly _not_ caught here, as the application should quit with a crash.
+            # 如果发生任何错误（例如：“无法读取公共密钥”），“ Trust.getInstance（）”将引发异常。
+            # 任何此类异常都在此处 explicitly _not_ caught，因为应用程序应退出并崩溃。
 
     def getCheckIfTrusted(self) -> bool:
         return self._check_if_trusted
@@ -96,8 +94,8 @@ class PluginRegistry(QObject):
     def initializeBeforePluginsAreLoaded(self) -> None:
         config_path = Resources.getConfigStoragePath()
 
-        # File to store plugin info, such as which ones to install/remove and which ones are disabled.
-        # At this point we can load this here because we already know the actual Application name, so the directory name
+        # 用于存储插件信息的文件，例如要安装/删除的插件信息以及已禁用的插件信息。
+        # 此时，我们可以在此处加载它，因为我们已经知道了实际的应用程序名称，目录名称也是
         self._plugin_config_filename = os.path.join(os.path.abspath(config_path), "plugins.json") # type: str
 
         from UM.Settings.ContainerRegistry import ContainerRegistry
@@ -105,7 +103,7 @@ class PluginRegistry(QObject):
 
         try:
             with container_registry.lockFile():
-                # Load the plugin info if exists
+                # 加载插件信息（如果存在）
                 if os.path.exists(self._plugin_config_filename):
                     Logger.log("i", "Loading plugin configuration file '%s'", self._plugin_config_filename)
                     with open(self._plugin_config_filename, "r", encoding = "utf-8") as f:
@@ -116,7 +114,7 @@ class PluginRegistry(QObject):
         except:
             Logger.logException("e", "Failed to load plugin configuration file '%s'", self._plugin_config_filename)
 
-        # Also load data from preferences, where the plugin info used to be saved
+        # 还可以从偏好设置中加载数据，这些信息曾经保存在其中
         preferences = self._application.getPreferences()
         disabled_plugins = preferences.getValue("general/disabled_plugins")
         disabled_plugins = disabled_plugins.split(",") if disabled_plugins else []
@@ -131,7 +129,7 @@ class PluginRegistry(QObject):
             if plugin_id not in self._plugins_to_remove:
                 self._plugins_to_remove.append(plugin_id)
 
-        # Remove plugins that need to be removed
+        # 删除需要删除的插件
         for plugin_id in self._plugins_to_remove:
             self._removePlugin(plugin_id)
         self._plugins_to_remove = []
@@ -139,7 +137,7 @@ class PluginRegistry(QObject):
             preferences.setValue("general/plugins_to_remove", "")
         self._savePluginData()
 
-        # Install the plugins that need to be installed (overwrite existing)
+        # 安装需要安装的插件（覆盖现有）
         for plugin_id, plugin_info in self._plugins_to_install.items():
             self._installPlugin(plugin_id, plugin_info["filename"])
         self._plugins_to_install = {}
@@ -148,7 +146,7 @@ class PluginRegistry(QObject):
     def initializeAfterPluginsAreLoaded(self) -> None:
         preferences = self._application.getPreferences()
 
-        # Remove the old preferences settings from preferences
+        # 从首选项中删除旧的首选项设置
         preferences.resetPreference("general/disabled_plugins")
         preferences.resetPreference("general/plugins_to_remove")
 
@@ -164,8 +162,8 @@ class PluginRegistry(QObject):
                                        })
                     f.write(data)
         except:
-            # Since we're writing to file (and waiting for a lock), there are a few things that can go wrong.
-            # There is no need to crash the application for this, but it is a failure that we want to log.
+            # 由于我们正在写文件（并等待锁定），因此有些事情可能会出错。
+            # 无需为此而使应用程序崩溃，但这是我们要记录的失败。
             Logger.logException("e", "Unable to save the plugin data.")
 
     # TODO:
@@ -185,12 +183,12 @@ class PluginRegistry(QObject):
     # PUBLIC METHODS
     #===============================================================================
 
-    #   Add a plugin location to the list of locations to search:
+    #   将插件位置添加到要搜索的位置列表中：
     def addPluginLocation(self, location: str) -> None:
         #TODO: Add error checking!
         self._plugin_locations.append(location)
 
-    #   Check if all required plugins are loaded:
+    #   检查是否已加载所有必需的插件：
     def checkRequiredPlugins(self, required_plugins: List[str]) -> bool:
         plugins = self._findInstalledPlugins()
         for plugin_id in required_plugins:
@@ -199,19 +197,19 @@ class PluginRegistry(QObject):
                 return False
         return True
 
-    #   Remove plugin from the list of enabled plugins and save to preferences:
+    #   从启用的插件列表中删除插件并保存到首选项：
     def disablePlugin(self, plugin_id: str) -> None:
         if plugin_id not in self._disabled_plugins:
             self._disabled_plugins.append(plugin_id)
         self._savePluginData()
 
-    #   Add plugin to the list of enabled plugins and save to preferences:
+    #   将插件添加到已启用插件的列表中并保存到首选项：
     def enablePlugin(self, plugin_id: str) -> None:
         if plugin_id in self._disabled_plugins:
             self._disabled_plugins.remove(plugin_id)
         self._savePluginData()
 
-    #   Get a list of enabled plugins:
+    #   获取已启用插件的列表：
     def getActivePlugins(self) -> List[str]:
         plugin_list = []
         for plugin_id in self._all_plugins:
@@ -219,12 +217,11 @@ class PluginRegistry(QObject):
                 plugin_list.append(plugin_id)
         return plugin_list
 
-    #   Get a list of all metadata matching a certain subset of metadata:
-    #   \param kwargs Keyword arguments.
-    #       Possible keywords:
-    #       - filter: \type{dict} The subset of metadata that should be matched.
-    #       - active_only: Boolean, True when only active plugin metadata should
-    #         be returned.
+    #   获取与元数据的某个子集匹配的所有元数据的列表：
+    #   \param kwargs 关键字参数.
+    #       可能的关键字:
+    #       - filter: \type{dict} 应该匹配的元数据的子集。
+    #       - active_only: 布尔值，当仅返回活动插件元数据时为True.
     def getAllMetaData(self, **kwargs: Any):
         data_filter = kwargs.get("filter", {})
         active_only = kwargs.get("active_only", False)
@@ -237,13 +234,12 @@ class PluginRegistry(QObject):
                 metadata_list.append(plugin_metadata)
         return metadata_list
 
-    #   Get a list of disabled plugins:
+    #   获取禁用的插件列表：
     def getDisabledPlugins(self) -> List[str]:
         return self._disabled_plugins
 
-    #   Get a list of installed plugins:
-    #   NOTE: These are plugins which have already been registered. This list is
-    #         actually populated by the private _findInstalledPlugins() method.
+    #   获取已安装插件的列表：
+    #   NOTE: 这些是已经注册的插件。 该列表实际上由私有_findInstalledPlugins（）方法填充。
     def getInstalledPlugins(self) -> List[str]:
         plugins = self._plugins_installed.copy()
         for plugin_id in self._plugins_to_remove:
@@ -254,9 +250,8 @@ class PluginRegistry(QObject):
                 plugins.append(plugin_id)
         return sorted(plugins)
 
-    #   Get the metadata for a certain plugin:
-    #   NOTE: InvalidMetaDataError is raised when no metadata can be found or
-    #         the metadata misses the right keys.
+    #   获取某个插件的元数据：
+    #   NOTE: 当找不到元数据或元数据缺少正确的键时，引发InvalidMetaDataError。
     def getMetaData(self, plugin_id: str) -> Dict[str, Any]:
         if plugin_id not in self._metadata:
             try:
